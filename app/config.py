@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     demo_api_key: str = "tally_sk_demo_4f9a2b7c1e8d6053"
     seed_on_startup: bool = True
     enable_disputes: bool = False
+    enable_traffic_generator: bool = False
+    traffic_interval_seconds: int = 180
+    traffic_target_url: str = "http://127.0.0.1:8080"
 
     @property
     def sqlalchemy_url(self) -> str:

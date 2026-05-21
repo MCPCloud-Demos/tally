@@ -15,6 +15,7 @@ primary_region = "iad"
 [env]
   SEED_ON_STARTUP = "true"
   ENABLE_DISPUTES = "false"
+  ENABLE_TRAFFIC_GENERATOR = "true"
 
 [http_service]
   internal_port = 8080

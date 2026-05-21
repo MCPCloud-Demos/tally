@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,14 +18,25 @@ from .routers import (
     subscriptions,
 )
 from .seed import seed_if_empty
+from .traffic import run_traffic_generator
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings = get_settings()
     init_db()
-    if get_settings().seed_on_startup:
+    if settings.seed_on_startup:
         seed_if_empty()
+    traffic_task: asyncio.Task | None = None
+    if settings.enable_traffic_generator:
+        traffic_task = asyncio.create_task(run_traffic_generator())
     yield
+    if traffic_task:
+        traffic_task.cancel()
+        try:
+            await traffic_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Tally — Payments & Billing API", version="1.0.0", lifespan=lifespan)

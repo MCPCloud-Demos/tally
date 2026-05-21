@@ -82,6 +82,9 @@ in [example-servers.md §5.6](./example-servers.md).
 | `DEMO_API_KEY` | `tally_sk_demo_4f9a2b7c1e8d6053` | Accepted bearer key |
 | `SEED_ON_STARTUP` | `true` | Seed the demo tenant when the database is empty |
 | `ENABLE_DISPUTES` | `false` | Expose the v1.1 `/disputes` endpoints |
+| `ENABLE_TRAFFIC_GENERATOR` | `false` | Run the in-app traffic generator (on for the Fly deploy) |
+| `TRAFFIC_INTERVAL_SECONDS` | `180` | Seconds between traffic-generator cycles |
+| `TRAFFIC_TARGET_URL` | `http://127.0.0.1:8080` | Base URL the generator calls |
 
 ## Tests
 
@@ -125,3 +128,15 @@ The reset Machine is **pinned to the image tag it was created with** — a later
 `fly deploy` does not update it. After a deploy that changes the data models or
 the seed script, recreate it: `fly machine destroy tally-nightly-reset --force`,
 then re-run the command above with the new deployment tag (`fly image show`).
+
+### Traffic generator
+
+When `ENABLE_TRAFFIC_GENERATOR=true` (set in `fly.toml`), the app starts a
+background task on startup that, every `TRAFFIC_INTERVAL_SECONDS`, calls a
+rotating handful of endpoints — and every fifth cycle opens and cancels a
+payment intent. This keeps the deployment visibly live: warm machines, a steady
+stream of access-log lines and DB queries, non-empty metrics. It is part of the
+app process, so it costs nothing extra and is updated by every `fly deploy`.
+It hits `127.0.0.1:8080` by default (in-container, no egress); point
+`TRAFFIC_TARGET_URL` at the public hostname to route through the Fly edge
+instead. Anything it writes is cleared by the nightly reset.
