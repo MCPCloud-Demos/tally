@@ -1,0 +1,34 @@
+# Fly.io deployment for the Tally demo API.
+# Provision Postgres and attach it before first deploy:
+#   fly launch --no-deploy
+#   fly postgres create --name tally-db
+#   fly postgres attach tally-db   # sets DATABASE_URL
+#   fly secrets set DEMO_API_KEY=tally_sk_demo_4f9a2b7c1e8d6053
+#   fly deploy
+
+app = "tally"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SEED_ON_STARTUP = "true"
+  ENABLE_DISPUTES = "false"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "15s"
+    timeout = "2s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
