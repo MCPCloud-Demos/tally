@@ -91,12 +91,37 @@ uv run pytest
 
 ## Deployment (Fly.io)
 
+Live at **https://api.tally.mcpcloud-demo.com** — app `tally-mcpcloud-demo`
+in the `mcpcloud-demos` org, backed by Fly Postgres, behind a Let's Encrypt
+cert (DNS managed in Cloudflare, "DNS only" / unproxied).
+
+To reproduce the provisioning from scratch:
+
 ```bash
-fly launch --no-deploy
-fly postgres create --name tally-db
-fly postgres attach tally-db          # sets DATABASE_URL
-fly secrets set DEMO_API_KEY=tally_sk_demo_4f9a2b7c1e8d6053
+fly apps create tally-mcpcloud-demo --org mcpcloud-demos
+fly postgres create --name tally-mcpcloud-demo-db --org mcpcloud-demos
+fly postgres attach tally-mcpcloud-demo-db --app tally-mcpcloud-demo  # sets DATABASE_URL
+fly secrets set DEMO_API_KEY=tally_sk_demo_4f9a2b7c1e8d6053 --app tally-mcpcloud-demo
 fly deploy
+fly certs add api.tally.mcpcloud-demo.com --app tally-mcpcloud-demo   # then add A/AAAA in DNS
 ```
 
-Target host per the plan: `https://api.tally.mcpcloud-demo.com`.
+### Nightly reset
+
+A scheduled Fly Machine (`tally-nightly-reset`, process group `reset`) runs
+`python -m app.seed` once every 24h to wipe and re-seed the demo tenant. It is
+separate from the `app` process group, so `fly deploy` leaves it untouched.
+
+```bash
+fly machine run \
+  --app tally-mcpcloud-demo --schedule daily --restart no \
+  --name tally-nightly-reset --region iad --vm-memory 512 \
+  --metadata fly_process_group=reset \
+  registry.fly.io/tally-mcpcloud-demo:<current-deployment-tag> \
+  -- python -m app.seed
+```
+
+The reset Machine is **pinned to the image tag it was created with** — a later
+`fly deploy` does not update it. After a deploy that changes the data models or
+the seed script, recreate it: `fly machine destroy tally-nightly-reset --force`,
+then re-run the command above with the new deployment tag (`fly image show`).
