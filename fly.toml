@@ -1,12 +1,12 @@
-# Fly.io deployment for the Tally demo API.
-# Provision Postgres and attach it before first deploy:
-#   fly launch --no-deploy
-#   fly postgres create --name tally-db
-#   fly postgres attach tally-db   # sets DATABASE_URL
-#   fly secrets set DEMO_API_KEY=tally_sk_demo_4f9a2b7c1e8d6053
+# Fly.io deployment for the Tally demo API (org: mcpcloud-demos).
+# Provisioning, in order:
+#   fly apps create tally-mcpcloud-demo --org mcpcloud-demos
+#   fly postgres create --name tally-mcpcloud-demo-db --org mcpcloud-demos
+#   fly postgres attach tally-mcpcloud-demo-db --app tally-mcpcloud-demo
+#   fly secrets set DEMO_API_KEY=<key> --app tally-mcpcloud-demo
 #   fly deploy
 
-app = "tally"
+app = "tally-mcpcloud-demo"
 primary_region = "iad"
 
 [build]
